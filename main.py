@@ -12,19 +12,22 @@ db: sqlite3.Connection | None = None
 
 
 @contextlib.contextmanager
-def database_context(db: sqlite3.Connection) -> Generator[sqlite3.Cursor, None, None]:
+def database_context(db: sqlite3.Connection, commit: bool=True) -> Generator[sqlite3.Cursor, None, None]:
     """Database cursor context manager.
 
     The cursor is closed and can no longer process statements after
     this context exits.
 
     :param db: Database connection.
+    :param commit: If true call commit on the database connection.
     :yield: A cursor to the database.
     :return: None.
     """
     cursor = db.cursor()
     yield cursor
     cursor.close()
+    if commit:
+        db.commit()
 
 
 @dataclasses.dataclass(slots=True)
@@ -53,7 +56,7 @@ def create_video_game_table(db: sqlite3.Connection) -> None:
     :param db: Database connection.
     :return: None.
     """
-    with  database_context(db) as cursor:
+    with database_context(db) as cursor:
         cursor.execute("""
                        CREATE TABLE IF NOT EXISTS videogames(
                        id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,7 +116,7 @@ def get_video_game_by_name(db: sqlite3.Connection, name: str) -> VideoGameModel:
 def delete_video_game_by_id(db: sqlite3.Connection, id: int) -> None:
     """Delete a video game from the database.
 
-    The database is queried base on the database id of the video game.
+    The database is queried based on the database id of the video game.
 
     :param db: Database connection.
     :param id: Database id of the video game to delete.
